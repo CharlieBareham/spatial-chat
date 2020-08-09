@@ -1,11 +1,8 @@
 import React from 'react'
+import Chatbox from './ChatBox'
 
-const AppContext = () => {
-  return (
-    <div>
-      <p>Hey hey</p>
-    </div>
-  )
+const AppContent = () => {
+  return <Chatbox />
 }
 
-export default AppContext
+export default AppContent
