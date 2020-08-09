@@ -1,6 +1,5 @@
 const express = require('express')
 const os = require('os')
-const { default: useBreakpoint } = require('antd/lib/grid/hooks/useBreakpoint')
 const webSocketserver = require('ws').Server
 
 const app = express()
@@ -10,7 +9,7 @@ const users = {}
 
 const sendTo = (connection, message) => connection.send(JSON.stringify(message))
 
-const handleLogin = users => {
+const handleLogin = ({ users, data, connection }) => {
   console.log('User logged in ', data.name)
   if (users[data.name]) {
     sendTo(connection, {
@@ -21,13 +20,13 @@ const handleLogin = users => {
     users[data.name] = connection
     connection.name = data.name
 
-    sendto(connection, {
+    sendTo(connection, {
       type: 'login',
       success: true
     })
   }
 }
-const handleOffer = users => {
+const handleOffer = (users, data) => {
   console.log('Sending offer to ', data.name)
 
   const conn = users[data.name]
@@ -41,7 +40,7 @@ const handleOffer = users => {
     })
   }
 }
-const handleAnswer = users => {
+const handleAnswer = (users, data) => {
   console.log('Sending answer to ', data.name)
 
   const conn = users[data.name]
@@ -54,7 +53,7 @@ const handleAnswer = users => {
   }
 }
 
-const handleCandidate = users => {
+const handleCandidate = (users, data) => {
   console.log('Sending candidate to ', data.name)
 
   const conn = users[data.name]
@@ -66,7 +65,7 @@ const handleCandidate = users => {
   }
 }
 
-const handleLeave = users => {
+const handleLeave = (users, data) => {
   console.log('User leaving ', data.name)
 
   const conn = users[data.name]
@@ -89,25 +88,27 @@ wss.on('connection', connection => {
       console.log('Invalid JSON ', message)
       data = {}
     }
-
+    console.log('server data', data)
     switch (data.type) {
       case 'login':
-        handleLogin(users)
+        handleLogin({ users, data, connection })
         break
       case 'offer':
-        handleOffer(users)
+        handleOffer(users, data)
         break
       case 'answer':
-        handleAnswer(users)
+        handleAnswer(users, data)
         break
       case 'candidate':
-        handleCandidate(users)
+        handleCandidate(users, data)
         break
       case 'leave':
-        handleLeave(users)
+        handleLeave(users, data)
         break
+      case 'servertest':
+        console.log('servertest', data)
       default:
-        sendto(connection, {
+        sendTo(connection, {
           type: 'error',
           message: 'Command not found ' + data.type
         })
@@ -132,7 +133,9 @@ wss.on('connection', connection => {
     }
   })
 
-  connection.send('Server says hello!')
+  connection.send(
+    JSON.stringify({ message: 'Server says hello!', type: 'connect' })
+  )
 })
 
 app.use(express.static('dist'))
